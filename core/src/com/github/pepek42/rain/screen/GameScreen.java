@@ -1,7 +1,6 @@
 package com.github.pepek42.rain.screen;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
@@ -9,51 +8,46 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.pepek42.rain.Rain;
+import com.github.pepek42.rain.entities.Bucket;
+import com.github.pepek42.rain.resource.Resource;
 
 import java.util.Iterator;
 
-public class GameScreen  extends ScreenAdapter {
+public class GameScreen extends ScreenAdapter {
+    public static final int DROP_SPEED = 500;
     private final Rain game;
 
     Texture dropImage;
-    Texture bucketImage;
+
     Sound dropSound;
     Music rainMusic;
-    OrthographicCamera camera;
-    Rectangle bucket;
+
     Array<Rectangle> raindrops;
     long lastDropTime;
     int dropsGathered;
+    private final Bucket bucket;
+    private final Viewport viewport;
 
 
-    public GameScreen(final Rain gam) {
-        this.game = gam;
+    public GameScreen(final Rain game) {
+        this.game = game;
 
-        // load the images for the droplet and the bucket, 64x64 pixels each
-        dropImage = new Texture(Gdx.files.internal("droplet.png"));
-        bucketImage = new Texture(Gdx.files.internal("bucket.png"));
-
-        // load the drop sound effect and the rain background "music"
-        dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
-        rainMusic = Gdx.audio.newMusic(Gdx.files.internal("rain.mp3"));
+        dropImage = game.getTexture(Resource.DROP_TEXTURE);
+        dropSound = game.getResource(Resource.DROP_SOUND, Sound.class);
+        rainMusic = game.getResource(Resource.RAIN_MUSIC, Music.class);
         rainMusic.setLooping(true);
 
-        // create the camera and the SpriteBatch
-        camera = new OrthographicCamera();
-        camera.setToOrtho(false, 800, 480);
+        OrthographicCamera camera = new OrthographicCamera();
+        camera.setToOrtho(false, Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT);
+        viewport = new FitViewport(Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT, camera);
 
-        // create a Rectangle to logically represent the bucket
-        bucket = new Rectangle();
-        bucket.x = 800 / 2 - 64 / 2; // center the bucket horizontally
-        bucket.y = 20; // bottom left corner of the bucket is 20 pixels above
-        // the bottom screen edge
-        bucket.width = 64;
-        bucket.height = 64;
+        bucket = new Bucket(this.game, Gdx.input);
 
         // create the raindrops array and spawn the first raindrop
         raindrops = new Array<>();
@@ -73,80 +67,50 @@ public class GameScreen  extends ScreenAdapter {
 
     @Override
     public void render(float delta) {
-        // clear the screen with a dark blue color. The
-        // arguments to clear are the red, green
-        // blue and alpha component in the range [0,1]
-        // of the color to be used to clear the screen.
+        viewport.apply();
         ScreenUtils.clear(0, 0, 0.2f, 1);
 
-        // tell the camera to update its matrices.
-        camera.update();
+        game.getBatch().setProjectionMatrix(viewport.getCamera().combined);
 
-        // tell the SpriteBatch to render in the
-        // coordinate system specified by the camera.
-        game.getBatch().setProjectionMatrix(camera.combined);
+        renderSprites();
 
-        // begin a new batch and draw the bucket and
-        // all drops
-        game.getBatch().begin();
-        game.getFont().draw(game.getBatch(), "Drops Collected: " + dropsGathered, 0, 480);
-        game.getBatch().draw(bucketImage, bucket.x, bucket.y);
-        for (Rectangle raindrop : raindrops) {
-            game.getBatch().draw(dropImage, raindrop.x, raindrop.y);
-        }
-        game.getBatch().end();
-
-        // process user input
-        if (Gdx.input.isTouched()) {
-            Vector3 touchPos = new Vector3();
-            touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-            camera.unproject(touchPos);
-            bucket.x = touchPos.x - 64 / 2;
-        }
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT))
-            bucket.x -= 200 * Gdx.graphics.getDeltaTime();
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT))
-            bucket.x += 200 * Gdx.graphics.getDeltaTime();
-
-        // make sure the bucket stays within the screen bounds
-        if (bucket.x < 0)
-            bucket.x = 0;
-        if (bucket.x > 800 - 64)
-            bucket.x = 800 - 64;
+        bucket.update(delta, viewport.getCamera());
 
         // check if we need to create a new raindrop
         if (TimeUtils.nanoTime() - lastDropTime > 1000000000)
             spawnRaindrop();
 
-        // move the raindrops, remove any that are beneath the bottom edge of
-        // the screen or that hit the bucket. In the later case we play back
-        // a sound effect as well.
-        Iterator<Rectangle> iter = raindrops.iterator();
-        while (iter.hasNext()) {
-            Rectangle raindrop = iter.next();
-            raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
+        Iterator<Rectangle> iterator = raindrops.iterator();
+        while (iterator.hasNext()) {
+            Rectangle raindrop = iterator.next();
+            raindrop.y -= DROP_SPEED * delta;
             if (raindrop.y + 64 < 0)
-                iter.remove();
-            if (raindrop.overlaps(bucket)) {
+                iterator.remove();
+            if (raindrop.overlaps(bucket.getRectangle())) {
                 dropsGathered++;
                 dropSound.play();
-                iter.remove();
+                iterator.remove();
             }
         }
     }
 
+    private void renderSprites() {
+        game.getBatch().begin();
+        game.getFont().draw(game.getBatch(), "Drops Collected: " + dropsGathered, 0, 480);
+        game.getBatch().draw(bucket.getTexture(), bucket.getX(), bucket.getY());
+        for (Rectangle raindrop : raindrops) {
+            game.getBatch().draw(dropImage, raindrop.x, raindrop.y);
+        }
+        game.getBatch().end();
+    }
+
     @Override
     public void show() {
-        // start the playback of the background music
-        // when the screen is shown
         rainMusic.play();
     }
 
     @Override
-    public void dispose() {
-        dropImage.dispose();
-        bucketImage.dispose();
-        dropSound.dispose();
-        rainMusic.dispose();
+    public void resize(int width, int height) {
+        viewport.update(width, height);
     }
 }
