@@ -11,15 +11,17 @@ import com.github.pepek42.rain.resource.Resource;
 public class Bucket {
     private static final int TEXTURE_WIDTH = 64;
     private static final int TEXTURE_HEIGHT = 64;
-    private static final int BUCKET_SPEED = 200;
+    private static final int BUCKET_SPEED = 500;
 
     private final Texture texture;
     private final Rectangle rectangle;
     private final Input input;
+    private final Rain game;
 
-    public Bucket(final Rain rain, Input input) {
+    public Bucket(final Rain game, Input input) {
+        this.game = game;
         this.input = input;
-        texture = rain.getTexture(Resource.BUCKET_TEXTURE);
+        texture = game.getTexture(Resource.BUCKET_TEXTURE);
 
         rectangle = new Rectangle(
                 Rain.GAME_AREA_WIDTH / 2.f - 64 / 2.f,
@@ -48,19 +50,11 @@ public class Bucket {
             rectangle.x = Rain.GAME_AREA_WIDTH - TEXTURE_HEIGHT;
     }
 
-    public Texture getTexture() {
-        return texture;
-    }
-
-    public float getX() {
-        return rectangle.x;
-    }
-
-    public float getY() {
-        return rectangle.y;
-    }
-
     public Rectangle getRectangle() {
         return rectangle;
+    }
+
+    public void renderBucket() {
+        game.getBatch().draw(texture, rectangle.x, rectangle.y);
     }
 }

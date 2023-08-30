@@ -17,8 +17,7 @@ public class Rain extends Game {
     private SpriteBatch batch;
     private BitmapFont font;
     private AssetManager assetManager;
-
-
+    private int dropsGathered;
 
     public SpriteBatch getBatch() {
         return batch;
@@ -54,5 +53,13 @@ public class Rain extends Game {
         batch.dispose();
         font.dispose();
         assetManager.dispose();
+    }
+
+    public void registerDropGathered() {
+        dropsGathered++;
+    }
+
+    public int getDropGathered() {
+        return dropsGathered;
     }
 }

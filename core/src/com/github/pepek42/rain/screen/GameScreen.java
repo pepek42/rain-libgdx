@@ -3,66 +3,33 @@ package com.github.pepek42.rain.screen;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.pepek42.rain.Rain;
 import com.github.pepek42.rain.entities.Bucket;
+import com.github.pepek42.rain.entities.RainManager;
 import com.github.pepek42.rain.resource.Resource;
 
-import java.util.Iterator;
-
 public class GameScreen extends ScreenAdapter {
-    public static final int DROP_SPEED = 500;
+
     private final Rain game;
-
-    Texture dropImage;
-
-    Sound dropSound;
-    Music rainMusic;
-
-    Array<Rectangle> raindrops;
-    long lastDropTime;
-    int dropsGathered;
+    private final Music backgroudMusic;
     private final Bucket bucket;
+    private final RainManager rainManager;
     private final Viewport viewport;
-
 
     public GameScreen(final Rain game) {
         this.game = game;
-
-        dropImage = game.getTexture(Resource.DROP_TEXTURE);
-        dropSound = game.getResource(Resource.DROP_SOUND, Sound.class);
-        rainMusic = game.getResource(Resource.RAIN_MUSIC, Music.class);
-        rainMusic.setLooping(true);
+        bucket = new Bucket(this.game, Gdx.input);
+        rainManager = new RainManager(game);
+        backgroudMusic = game.getResource(Resource.RAIN_MUSIC, Music.class);
+        backgroudMusic.setLooping(true);
 
         OrthographicCamera camera = new OrthographicCamera();
         camera.setToOrtho(false, Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT);
         viewport = new FitViewport(Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT, camera);
-
-        bucket = new Bucket(this.game, Gdx.input);
-
-        // create the raindrops array and spawn the first raindrop
-        raindrops = new Array<>();
-        spawnRaindrop();
-
-    }
-
-    private void spawnRaindrop() {
-        Rectangle raindrop = new Rectangle();
-        raindrop.x = MathUtils.random(0, 800 - 64);
-        raindrop.y = 480;
-        raindrop.width = 64;
-        raindrop.height = 64;
-        raindrops.add(raindrop);
-        lastDropTime = TimeUtils.nanoTime();
     }
 
     @Override
@@ -74,39 +41,25 @@ public class GameScreen extends ScreenAdapter {
 
         renderSprites();
 
-        bucket.update(delta, viewport.getCamera());
-
-        // check if we need to create a new raindrop
-        if (TimeUtils.nanoTime() - lastDropTime > 1000000000)
-            spawnRaindrop();
-
-        Iterator<Rectangle> iterator = raindrops.iterator();
-        while (iterator.hasNext()) {
-            Rectangle raindrop = iterator.next();
-            raindrop.y -= DROP_SPEED * delta;
-            if (raindrop.y + 64 < 0)
-                iterator.remove();
-            if (raindrop.overlaps(bucket.getRectangle())) {
-                dropsGathered++;
-                dropSound.play();
-                iterator.remove();
-            }
-        }
+        updateState(delta);
     }
 
     private void renderSprites() {
         game.getBatch().begin();
-        game.getFont().draw(game.getBatch(), "Drops Collected: " + dropsGathered, 0, 480);
-        game.getBatch().draw(bucket.getTexture(), bucket.getX(), bucket.getY());
-        for (Rectangle raindrop : raindrops) {
-            game.getBatch().draw(dropImage, raindrop.x, raindrop.y);
-        }
+        game.getFont().draw(game.getBatch(), "Drops Collected: " + game.getDropGathered(), 0, 480);
+        bucket.renderBucket();
+        rainManager.renderRain();
         game.getBatch().end();
+    }
+
+    private void updateState(float delta) {
+        bucket.update(delta, viewport.getCamera());
+        rainManager.update(delta, bucket.getRectangle());
     }
 
     @Override
     public void show() {
-        rainMusic.play();
+        backgroudMusic.play();
     }
 
     @Override
