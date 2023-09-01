@@ -13,11 +13,13 @@ import com.github.pepek42.rain.screen.MainMenuScreen;
 public class Rain extends Game {
     public static final int GAME_AREA_WIDTH = 800;
     public static final int GAME_AREA_HEIGHT = 480;
+    public static final float TWO_MINUTES_TO_SECONDS_TIMER = 2.f * 60;
 
     private SpriteBatch batch;
     private BitmapFont font;
     private AssetManager assetManager;
     private int dropsGathered;
+    private float timer;
 
     public SpriteBatch getBatch() {
         return batch;
@@ -55,11 +57,29 @@ public class Rain extends Game {
         assetManager.dispose();
     }
 
+    public void reset() {
+        dropsGathered = 0;
+        timer = TWO_MINUTES_TO_SECONDS_TIMER;
+    }
+
+    public void updateTimer(float delta) {
+        timer -= delta;
+    }
+
+    public boolean isGameOver() {
+        return timer <= 0;
+    }
+
     public void registerDropGathered() {
         dropsGathered++;
     }
 
+
     public int getDropGathered() {
         return dropsGathered;
+    }
+
+    public int getTimer() {
+        return (int) timer;
     }
 }

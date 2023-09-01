@@ -19,6 +19,7 @@ public class GameScreen extends ScreenAdapter {
     private final Bucket bucket;
     private final RainManager rainManager;
     private final Viewport viewport;
+    private final Hud hud;
 
     public GameScreen(final Rain game) {
         this.game = game;
@@ -30,23 +31,29 @@ public class GameScreen extends ScreenAdapter {
         OrthographicCamera camera = new OrthographicCamera();
         camera.setToOrtho(false, Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT);
         viewport = new FitViewport(Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT, camera);
+        hud = new Hud(game);
     }
 
     @Override
     public void render(float delta) {
+        game.updateTimer(delta);
+        if (game.isGameOver()) {
+            game.setScreen(new GameOverScreen(game));
+            dispose();
+        }
         viewport.apply();
         ScreenUtils.clear(0, 0, 0.2f, 1);
 
         game.getBatch().setProjectionMatrix(viewport.getCamera().combined);
 
         renderSprites();
+        hud.drawHud();
 
         updateState(delta);
     }
 
     private void renderSprites() {
         game.getBatch().begin();
-        game.getFont().draw(game.getBatch(), "Drops Collected: " + game.getDropGathered(), 0, 480);
         bucket.renderBucket();
         rainManager.renderRain();
         game.getBatch().end();
