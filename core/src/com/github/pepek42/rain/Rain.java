@@ -13,7 +13,7 @@ import com.github.pepek42.rain.screen.MainMenuScreen;
 public class Rain extends Game {
     public static final int GAME_AREA_WIDTH = 800;
     public static final int GAME_AREA_HEIGHT = 480;
-    public static final float TWO_MINUTES_TO_SECONDS_TIMER = 2.f * 60;
+    public static final float TIMER_IN_SECONDS = 1 * 60f;
 
     private SpriteBatch batch;
     private BitmapFont font;
@@ -59,7 +59,7 @@ public class Rain extends Game {
 
     public void reset() {
         dropsGathered = 0;
-        timer = TWO_MINUTES_TO_SECONDS_TIMER;
+        timer = TIMER_IN_SECONDS;
     }
 
     public void updateTimer(float delta) {
