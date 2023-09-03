@@ -12,19 +12,19 @@ import com.github.pepek42.rain.resource.Resource;
 import java.util.Iterator;
 
 public class RainManager {
-    private static final int DROP_SPEED = 500;
-
     private final Array<Rectangle> raindrops;
     private final Rain game;
     private final Texture dropImage;
     private final Sound dropSound;
     private long lastDropTime;
+    private final float dropSpeed;
 
-    public RainManager(final Rain game) {
+    public RainManager(final Rain game, float dropSpeed) {
         this.game = game;
         raindrops = new Array<>();
         dropImage = game.getTexture(Resource.DROP_TEXTURE);
         dropSound = game.getResource(Resource.DROP_SOUND, Sound.class);
+        this.dropSpeed = dropSpeed;
         lastDropTime = TimeUtils.nanoTime();
     }
 
@@ -51,7 +51,7 @@ public class RainManager {
         Iterator<Rectangle> iterator = raindrops.iterator();
         while (iterator.hasNext()) {
             Rectangle raindrop = iterator.next();
-            raindrop.y -= DROP_SPEED * delta;
+            raindrop.y -= dropSpeed * delta;
             if (raindrop.y + 64 < 0)
                 iterator.remove();
             if (raindrop.overlaps(bucketRectangle)) {

@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.github.pepek42.rain.Rain;
 import com.github.pepek42.rain.entities.Bucket;
 import com.github.pepek42.rain.entities.RainManager;
+import com.github.pepek42.rain.enumeration.Difficulty;
 import com.github.pepek42.rain.resource.Resource;
 
 public class GameScreen extends ScreenAdapter {
@@ -21,10 +22,10 @@ public class GameScreen extends ScreenAdapter {
     private final Viewport viewport;
     private final Hud hud;
 
-    public GameScreen(final Rain game) {
+    public GameScreen(final Rain game, Difficulty difficulty) {
         this.game = game;
         bucket = new Bucket(this.game, Gdx.input);
-        rainManager = new RainManager(game);
+        rainManager = new RainManager(game, difficulty.getDropSpeed());
         backgroudMusic = game.getResource(Resource.RAIN_MUSIC, Music.class);
         backgroudMusic.setLooping(true);
 
