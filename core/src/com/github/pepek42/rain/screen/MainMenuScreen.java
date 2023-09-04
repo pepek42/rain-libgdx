@@ -1,5 +1,6 @@
 package com.github.pepek42.rain.screen;
 
+import com.badlogic.gdx.Application;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
@@ -21,16 +22,9 @@ public class MainMenuScreen extends ScreenAdapter {
         Skin uiSkin = new Skin(Gdx.files.internal("uiskin.json"));
         stage = new Stage(new FitViewport(Rain.GAME_AREA_WIDTH, Rain.GAME_AREA_HEIGHT), game.getBatch());
         final Table table = new Table();
-        final Button quitButton = new TextButton("Quit", uiSkin);
+
         final Button easyGameButton = new TextButton("Easy game", uiSkin);
         final Button hardGameButton = new TextButton("Hard game", uiSkin);
-        quitButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                Gdx.app.exit();
-            }
-        });
-
         easyGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -48,7 +42,16 @@ public class MainMenuScreen extends ScreenAdapter {
         table.row().pad(10, 0, 10, 0);
         table.add(hardGameButton).fillX().uniformX();
         table.row();
-        table.add(quitButton).fillX().uniformX();
+        if (Gdx.app.getType() != Application.ApplicationType.WebGL) {
+            final Button quitButton = new TextButton("Quit", uiSkin);
+            quitButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    Gdx.app.exit();
+                }
+            });
+            table.add(quitButton).fillX().uniformX();
+        }
         stage.addActor(table);
         Gdx.input.setInputProcessor(stage);
     }
